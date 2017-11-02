@@ -37,7 +37,7 @@ TOP := ../../..
 include $(TOP)/src/common.inc
 
 ifeq ($(BUILD_RPMEM), y)
-PROGS = basic manpage
+PROGS = basic manpage test_RDMA_pthread
 
 LIBS = -lrpmem -pthread $(shell $(PKG_CONFIG) --libs libfabric)
 
@@ -50,3 +50,4 @@ include ../Makefile.inc
 
 basic: basic.o
 manpage: manpage.o
+test_RDMA_pthread: test_RDMA_pthread.o

@@ -80,7 +80,13 @@ int rpmem_set_attr(RPMEMpool *rpp, const struct rpmem_pool_attr *attr);
 
 int rpmem_close(RPMEMpool *rpp);
 
+//thkim
+int rpmem_persist_test(RPMEMpool *rpp, size_t offset, size_t length, size_t transfer_len,
+		unsigned lane);
 int rpmem_persist(RPMEMpool *rpp, size_t offset, size_t length,
+		unsigned lane);
+//thkim
+int rpmem_read_test(RPMEMpool *rpp, void *buff, size_t offset, size_t length, size_t transfer_len,
 		unsigned lane);
 int rpmem_read(RPMEMpool *rpp, void *buff, size_t offset, size_t length,
 		unsigned lane);

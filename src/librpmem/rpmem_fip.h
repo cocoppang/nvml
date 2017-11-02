@@ -60,9 +60,15 @@ int rpmem_fip_close(struct rpmem_fip *fip);
 int rpmem_fip_process_start(struct rpmem_fip *fip);
 int rpmem_fip_process_stop(struct rpmem_fip *fip);
 
+//thkim modified
+int rpmem_fip_persist_test(struct rpmem_fip *fip, size_t offset, size_t len,
+		size_t transfer_len, unsigned lane);
 int rpmem_fip_persist(struct rpmem_fip *fip, size_t offset, size_t len,
 		unsigned lane);
 
+//thkim modified
+int rpmem_fip_read_test(struct rpmem_fip *fip, void *buff,
+		size_t len, size_t transfer_len, size_t off, unsigned lane);
 int rpmem_fip_read(struct rpmem_fip *fip, void *buff,
 		size_t len, size_t off, unsigned lane);
 void rpmem_fip_probe_fork_safety(int *fork_unsafe);

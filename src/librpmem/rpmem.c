@@ -602,6 +602,37 @@ rpmem_close(RPMEMpool *rpp)
 }
 
 /*
+ * thkim modified
+ * rpmem_persist -- persist operation on target node
+ *
+ * rpp           -- remote pool handle
+ * offset        -- offset in pool
+ * length        -- length of persist operation
+ * lane          -- lane number
+ */
+int
+rpmem_persist_test(RPMEMpool *rpp, size_t offset, size_t length, size_t transfer_len, unsigned lane)
+{
+	LOG(3, "rpp %p, offset %zu, length %zu, lane %d", rpp, offset, length,
+			lane);
+
+	if (unlikely(rpp->error)) {
+		errno = rpp->error;
+		return -1;
+	}
+
+	int ret = rpmem_fip_persist_test(rpp->fip, offset, length, transfer_len, lane);
+	if (unlikely(ret)) {
+		ERR("persist operation failed");
+		rpp->error = ret;
+		errno = rpp->error;
+		return -1;
+	}
+
+	return 0;
+}
+
+/*
  * rpmem_persist -- persist operation on target node
  *
  * rpp           -- remote pool handle
@@ -625,6 +656,38 @@ rpmem_persist(RPMEMpool *rpp, size_t offset, size_t length, unsigned lane)
 		ERR("persist operation failed");
 		rpp->error = ret;
 		errno = rpp->error;
+		return -1;
+	}
+
+	return 0;
+}
+
+/*
+ * thkim modified rpmem_read
+ * rpmem_read -- read data from remote pool:
+ *
+ * rpp           -- remote pool handle
+ * buff          -- output buffer
+ * offset        -- offset in pool
+ * length        -- length of read operation
+ */
+int
+rpmem_read_test(RPMEMpool *rpp, void *buff, size_t offset,
+	size_t length, size_t transfer_len, unsigned lane)
+{
+	LOG(3, "rpp %p, buff %p, offset %zu, length %zu, lane %d", rpp, buff,
+			offset, length, lane);
+
+	if (unlikely(rpp->error)) {
+		errno = rpp->error;
+		return -1;
+	}
+
+	int ret = rpmem_fip_read_test(rpp->fip, buff, length, transfer_len, offset, lane);
+	if (unlikely(ret)) {
+        errno = ret;
+		ERR("!read operation failed");
+		rpp->error = ret;
 		return -1;
 	}
 
