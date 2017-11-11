@@ -1,7 +1,3 @@
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/thkim/usr/lib/nvml_debug
 export RPMEM_LOG_LEVEL=15
 export RPMEM_LOG_FILE=/home/thkim/rpmemd/rpmem.log
-export RPMEM_ENABLE_SOCKETS=1
-export RPMEM_ENABLE_VERBS=1
-export RPMEM_CMD='source setup_environment && source setup_nvm_environment && rpmemd -c /home/thkim/rpmemd/rpmemd.conf'
-export PMEM_IS_PMEM_FORCE=1

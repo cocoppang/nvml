@@ -49,6 +49,7 @@
 #include <time.h>
 
 #define POOL_SIZE	(1024 * 1024)
+//#define POOL_SIZE	(4096)
 //#define NLANES		4
 
 struct thread_data{
@@ -58,7 +59,15 @@ struct thread_data{
     int thread_id;
     int transfer_size;
     bool isWrite;
+    int batch_size;
 };
+
+//barrier for testing correctly
+pthread_barrier_t mybarrier;
+
+/* timer variables */
+unsigned long W1, W2;
+unsigned long R1, R2;
 
 unsigned long timestamp()
 {
@@ -78,6 +87,15 @@ void *issue_request(void *threadarg)
     t_data = (struct thread_data *)threadarg;
 
 
+    pthread_barrier_wait(&mybarrier);
+
+    if(t_data->thread_id == 0)
+    {
+    	if(t_data->isWrite)
+		W1 = timestamp();
+	else
+		R1 = timestamp();
+    }
     /* write operation */
     if(t_data->isWrite)
     {
@@ -94,11 +112,20 @@ void *issue_request(void *threadarg)
     {
         ret = rpmem_read_test(t_data->rpp, t_data->readbuf, 
                 t_data->thread_id*(POOL_SIZE/t_data->total_thread), POOL_SIZE/t_data->total_thread,
-                t_data->transfer_size, t_data->thread_id);
+                t_data->transfer_size, t_data->thread_id, t_data->batch_size);
         if (ret) {
             fprintf(stderr, "rpmem_read: %s\n", rpmem_errormsg());
         }
 
+    }
+    pthread_barrier_wait(&mybarrier);
+
+    if(t_data->thread_id == 0)
+    {
+    	if(t_data->isWrite)
+		W2 = timestamp();
+	else
+		R2 = timestamp();
     }
 
     return NULL;   
@@ -111,8 +138,8 @@ main(int argc, char *argv[])
 	//unsigned nlanes = NLANES;
     
 
-	if (argc < 6) {
-		fprintf(stderr, "usage: %s [create|open|remove] <target> <pool_set> <client_numthread> <transfer_size>\n", argv[0]);
+	if (argc < 7) {
+		fprintf(stderr, "usage: %s [create|open|remove] <target> <pool_set> <client_numthread> <transfer_size> <batch_size>\n", argv[0]);
 		return 1;
 	}
 
@@ -124,6 +151,8 @@ main(int argc, char *argv[])
     int num_threads = atoi(numthread_string);
     char *transfer_string = argv[5];
     int transfer_size = atoi(transfer_string);
+    char *batch_string = argv[6];
+    int batch_size = atoi(batch_string);
     unsigned nlanes = num_threads;
 
     RPMEMpool *rpp;
@@ -181,16 +210,15 @@ main(int argc, char *argv[])
 	memset(pool, 0, POOL_SIZE);
 	memset(readbuf, 0, POOL_SIZE);
 
-    /* timer variables */
-    unsigned long T1, T2;
-    unsigned long R1, R2;
-
     pthread_t* threads;
     struct thread_data* td;
     void* status;
 
     threads = (pthread_t*)malloc(sizeof(pthread_t)*num_threads);
     td = (struct thread_data*)malloc(sizeof(struct thread_data)*num_threads);
+
+
+    pthread_barrier_init(&mybarrier, NULL, num_threads);
 
     for(int i = 0 ; i < num_threads; i++)
     {
@@ -203,7 +231,7 @@ main(int argc, char *argv[])
     }
 
     /* write performance test */
-    T1 = timestamp();
+    //T1 = timestamp();
 
     for(int i = 0 ; i < num_threads; i++)
     {
@@ -215,7 +243,7 @@ main(int argc, char *argv[])
         pthread_join(threads[i], (void**)&status);
     }
     
-    T2 = timestamp();
+    //T2 = timestamp();
 
 
     /* read performance test */
@@ -231,9 +259,10 @@ main(int argc, char *argv[])
         td[i].readbuf = readbuf_idx;
         td[i].total_thread = num_threads;
         td[i].isWrite = false;
+	td[i].batch_size = batch_size;
     }
         
-    R1 = timestamp();
+    //R1 = timestamp();
 
     for(int i = 0 ; i < num_threads; i++)
     {
@@ -244,9 +273,9 @@ main(int argc, char *argv[])
     {
         pthread_join(threads[i], (void**)&status);
     }
-    R2 = timestamp();
+    //R2 = timestamp();
 
-    unsigned long total_write_time = T2-T1;
+    unsigned long total_write_time = W2-W1;
     unsigned long total_read_time = R2-R1;
     /* print a result */
     fprintf(stdout, "Transfer size : %d, Pool size: %d, Number of RDMA: %d\n", 
@@ -268,9 +297,11 @@ main(int argc, char *argv[])
 		fprintf(stderr, "rpmem_close: %s\n", rpmem_errormsg());
 		return 1;
 	}
-
+	
+    pthread_barrier_destroy(&mybarrier);
     pthread_exit(NULL);
 
+    free(readbuf);
     free(threads);
     free(td);
 

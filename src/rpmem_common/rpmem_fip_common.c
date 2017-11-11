@@ -239,22 +239,24 @@ struct rpmem_fip_lane_attr {
 	size_t n_per_cq; /* number of entries per lane in completion queue */
 };
 
+
+/* thkim relax on the queue size */
 static struct rpmem_fip_lane_attr
 rpmem_fip_lane_attrs[MAX_RPMEM_FIP_NODE][MAX_RPMEM_PM] = {
 	[RPMEM_FIP_NODE_CLIENT][RPMEM_PM_GPSPM] = {
-		.n_per_sq = 2, /* WRITE + SEND */
-		.n_per_rq = 1, /* RECV */
-		.n_per_cq = 3,
+		.n_per_sq = 16, /* WRITE + SEND */
+		.n_per_rq = 16, /* RECV */
+		.n_per_cq = 16,
 	},
 	[RPMEM_FIP_NODE_CLIENT][RPMEM_PM_APM] = {
-		.n_per_sq = 2, /* WRITE + READ */
-		.n_per_rq = 0, /* unused */
-		.n_per_cq = 2,
+		.n_per_sq = 16, /* WRITE + READ */
+		.n_per_rq = 16, /* unused */
+		.n_per_cq = 16,
 	},
 	[RPMEM_FIP_NODE_SERVER][RPMEM_PM_GPSPM] = {
-		.n_per_sq = 1, /* SEND */
-		.n_per_rq = 1, /* RECV */
-		.n_per_cq = 3,
+		.n_per_sq = 16, /* SEND */
+		.n_per_rq = 16, /* RECV */
+		.n_per_cq = 16,
 	},
 	[RPMEM_FIP_NODE_SERVER][RPMEM_PM_APM] = {
 		.n_per_sq = 0, /* unused */
@@ -262,6 +264,31 @@ rpmem_fip_lane_attrs[MAX_RPMEM_FIP_NODE][MAX_RPMEM_PM] = {
 		.n_per_cq = 1,
 	},
 };
+
+
+//static struct rpmem_fip_lane_attr
+//rpmem_fip_lane_attrs[MAX_RPMEM_FIP_NODE][MAX_RPMEM_PM] = {
+//	[RPMEM_FIP_NODE_CLIENT][RPMEM_PM_GPSPM] = {
+//		.n_per_sq = 2, /* WRITE + SEND */
+//		.n_per_rq = 1, /* RECV */
+//		.n_per_cq = 3,
+//	},
+//	[RPMEM_FIP_NODE_CLIENT][RPMEM_PM_APM] = {
+//		.n_per_sq = 2, /* WRITE + READ */
+//		.n_per_rq = 0, /* unused */
+//		.n_per_cq = 2,
+//	},
+//	[RPMEM_FIP_NODE_SERVER][RPMEM_PM_GPSPM] = {
+//		.n_per_sq = 1, /* SEND */
+//		.n_per_rq = 1, /* RECV */
+//		.n_per_cq = 3,
+//	},
+//	[RPMEM_FIP_NODE_SERVER][RPMEM_PM_APM] = {
+//		.n_per_sq = 0, /* unused */
+//		.n_per_rq = 0, /* unused */
+//		.n_per_cq = 1,
+//	},
+//};
 
 /*
  * rpmem_fip_cq_size -- returns completion queue size based on

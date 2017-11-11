@@ -87,7 +87,7 @@ int rpmem_persist(RPMEMpool *rpp, size_t offset, size_t length,
 		unsigned lane);
 //thkim
 int rpmem_read_test(RPMEMpool *rpp, void *buff, size_t offset, size_t length, size_t transfer_len,
-		unsigned lane);
+		unsigned lane, unsigned batch_size);
 int rpmem_read(RPMEMpool *rpp, void *buff, size_t offset, size_t length,
 		unsigned lane);
 

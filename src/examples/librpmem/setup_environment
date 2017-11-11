@@ -1,0 +1,4 @@
+export RPMEM_ENABLE_SOCKETS=1
+export RPMEM_ENABLE_VERBS=1
+export RPMEM_CMD='source setup_environment && source setup_nvm_environment && rpmemd -c /home/thkim/rpmemd/rpmemd.conf'
+export PMEM_IS_PMEM_FORCE=1

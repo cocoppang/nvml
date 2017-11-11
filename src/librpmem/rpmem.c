@@ -673,7 +673,7 @@ rpmem_persist(RPMEMpool *rpp, size_t offset, size_t length, unsigned lane)
  */
 int
 rpmem_read_test(RPMEMpool *rpp, void *buff, size_t offset,
-	size_t length, size_t transfer_len, unsigned lane)
+	size_t length, size_t transfer_len, unsigned lane, unsigned batch_size)
 {
 	LOG(3, "rpp %p, buff %p, offset %zu, length %zu, lane %d", rpp, buff,
 			offset, length, lane);
@@ -683,7 +683,7 @@ rpmem_read_test(RPMEMpool *rpp, void *buff, size_t offset,
 		return -1;
 	}
 
-	int ret = rpmem_fip_read_test(rpp->fip, buff, length, transfer_len, offset, lane);
+	int ret = rpmem_fip_read_test(rpp->fip, buff, length, transfer_len, offset, lane, batch_size);
 	if (unlikely(ret)) {
         errno = ret;
 		ERR("!read operation failed");
