@@ -293,7 +293,7 @@ rpmem_fip_lane_fini(struct rpmem_fip_lane *lanep)
  */
 static int
 rpmem_fip_lane_wait_batch(struct rpmem_fip *fip, struct rpmem_fip_lane *lanep,
-	uint64_t e, unsigned batch_size)
+	uint64_t e, unsigned batch_size, unsigned* queue_count)
 {
 
 	ssize_t sret = 0;
@@ -303,7 +303,12 @@ rpmem_fip_lane_wait_batch(struct rpmem_fip *fip, struct rpmem_fip_lane *lanep,
 	struct fi_cq_msg_entry cq_entry;
 	unsigned cur = 0;
 
-	while ((batch_size - cur > 0) &&(!fip->closing && (lanep->event & e))) {
+	//while ((batch_size - cur > 0) &&(!fip->closing && (lanep->event & e))) {
+	while ((batch_size - cur > 0) &&(!fip->closing)) {
+
+        if(*queue_count == 0)
+            break;
+
 		sret = fi_cq_sread(lanep->cq, &cq_entry, 1, NULL, -1);
 		if (unlikely(fip->closing))
 		{
@@ -322,8 +327,9 @@ rpmem_fip_lane_wait_batch(struct rpmem_fip *fip, struct rpmem_fip_lane *lanep,
 			goto err_cq_read;
 		}
 
-		lanep->event &= ~cq_entry.flags;
+	//	lanep->event &= ~cq_entry.flags;
 		cur += (unsigned)sret;
+        (*queue_count)--;
 	}
 
 	return 0;
@@ -1214,18 +1220,45 @@ rpmem_fip_read_test(struct rpmem_fip *fip, void *buff, size_t len,
 	void *rd_mr_desc;	/* read buffer memory descriptor */
 	struct rpmem_fip_rlane rd_lane;
 	
+
+ 
+	void *rd_buff;		/* buffer for read operation */
+
+	/* allocate buffer for read operation */
+	errno = posix_memalign((void **)&rd_buff, Pagesize,
+			rd_buff_len);
+	if (errno) {
+		RPMEM_LOG(ERR, "!allocating read buffer");
+		ret = errno;
+		goto err_malloc_rd_buff;
+	}
+
 	/*
 	 * Register buffer for read operation.
 	 * The read operation utilizes READ operation thus
 	 * the FI_REMOTE_WRITE flag.
 	 */
-	ret = fi_mr_reg(fip->domain, buff,
+	ret = fi_mr_reg(fip->domain, rd_buff,
 			rd_buff_len, FI_REMOTE_WRITE,
 			0, 0, 0, &rd_mr, NULL);
 	if (ret) {
 		RPMEM_FI_ERR(ret, "registrating read buffer");
 		goto err_rd_mr;
 	}
+
+    //In the single tester, let's use buff instead of rd_buff
+	/*
+	 * Register buffer for read operation.
+	 * The read operation utilizes READ operation thus
+	 * the FI_REMOTE_WRITE flag.
+	 */
+//	ret = fi_mr_reg(fip->domain, buff,
+//			rd_buff_len, FI_REMOTE_WRITE,
+//			0, 0, 0, &rd_mr, NULL);
+//	if (ret) {
+//		RPMEM_FI_ERR(ret, "registrating read buffer");
+//		goto err_rd_mr;
+//	}
 
 	/* get read buffer local memory descriptor */
 	rd_mr_desc = fi_mr_desc(rd_mr);
@@ -1238,9 +1271,10 @@ rpmem_fip_read_test(struct rpmem_fip *fip, void *buff, size_t len,
 			fip->rkey, &rd_lane, FI_COMPLETION);
 
 	size_t rd = 0;
-	//uint8_t *cbuff = buff;
+	uint8_t *cbuff = buff;
 	struct rpmem_fip_lane *lanep = &fip->lanes[lane].base;
 	unsigned count = 0;
+    unsigned queue_count = 0;
 
 	/* thkim I think it may not be needed */
     	//rpmem_fip_lane_begin(lanep, FI_READ);
@@ -1248,7 +1282,7 @@ rpmem_fip_read_test(struct rpmem_fip *fip, void *buff, size_t len,
 	//check the cq size
 	//RPMEM_LOG(ERR, "cq_size : %d" , (int)(fip->cq_size));
 
-	VALGRIND_DO_MAKE_MEM_DEFINED(buff, len);
+	//VALGRIND_DO_MAKE_MEM_DEFINED(buff, len);
 
 	while (rd < len) {
 		size_t rd_len = len - rd < transfer_len ?
@@ -1259,40 +1293,33 @@ rpmem_fip_read_test(struct rpmem_fip *fip, void *buff, size_t len,
 		rpmem_fip_lane_begin(lanep, FI_READ);
 
 		ret = rpmem_fip_readmsg(lanep->ep, &rd_lane.read,
-				buff, rd_len, raddr);
-		while (ret)
-		{
-		    ret = rpmem_fip_lane_wait_batch(fip, lanep, FI_READ, batch_size);
-		    if (ret) {
-			ERR("error when processing read request");
-			goto err_lane_wait;
-		    }
-		    ret = rpmem_fip_readmsg(lanep->ep, &rd_lane.read,
-				buff, rd_len, raddr);
-		}
+				rd_buff, rd_len, raddr);
 		if (ret) {
 			RPMEM_FI_ERR(ret, "RMA read");
 			goto err_readmsg;
 		}
+        else{
+            queue_count++;
+        }
 
-		//VALGRIND_DO_MAKE_MEM_DEFINED(rd_buff, rd_len);
+		VALGRIND_DO_MAKE_MEM_DEFINED(rd_buff, rd_len);
 
 		if(count % batch_size == 0)
 		{
-		    ret = rpmem_fip_lane_wait_batch(fip, lanep, FI_READ, batch_size);
+		    ret = rpmem_fip_lane_wait_batch(fip, lanep, FI_READ, batch_size, &queue_count);
 		    if (ret) {
 			ERR("error when processing read request");
 			goto err_lane_wait;
 		    }
 		}
 
-		//memcpy(&cbuff[rd], rd_buff, rd_len);
+		memcpy(&cbuff[rd], rd_buff, rd_len);
 
 		rd += rd_len;
 		count++;
 	}
 	
-	ret = rpmem_fip_lane_wait_batch(fip, lanep, FI_READ, batch_size);
+	ret = rpmem_fip_lane_wait_batch(fip, lanep, FI_READ, batch_size, &queue_count);
 	if (ret) {
 	    ERR("error when processing read request");
 	    goto err_lane_wait;
@@ -1303,6 +1330,8 @@ err_lane_wait:
 err_readmsg:
 	RPMEM_FI_CLOSE(rd_mr, "unregistering memory");
 err_rd_mr:
+    free(rd_buff);
+err_malloc_rd_buff:
 	return ret;
 }
 
