@@ -611,7 +611,7 @@ rpmem_close(RPMEMpool *rpp)
  * lane          -- lane number
  */
 int
-rpmem_persist_test(RPMEMpool *rpp, size_t offset, size_t length, size_t transfer_len, unsigned lane)
+rpmem_persist_test(RPMEMpool *rpp, size_t offset, size_t length, size_t transfer_len, unsigned lane, unsigned batch_size)
 {
 	LOG(3, "rpp %p, offset %zu, length %zu, lane %d", rpp, offset, length,
 			lane);
@@ -621,7 +621,7 @@ rpmem_persist_test(RPMEMpool *rpp, size_t offset, size_t length, size_t transfer
 		return -1;
 	}
 
-	int ret = rpmem_fip_persist_test(rpp->fip, offset, length, transfer_len, lane);
+	int ret = rpmem_fip_persist_test(rpp->fip, offset, length, transfer_len, lane, batch_size);
 	if (unlikely(ret)) {
 		ERR("persist operation failed");
 		rpp->error = ret;

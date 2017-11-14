@@ -102,7 +102,7 @@ void *issue_request(void *threadarg)
         /* make local data persistent on remote node */
         ret = rpmem_persist_test(t_data->rpp, 
                 t_data->thread_id*(POOL_SIZE/t_data->total_thread), POOL_SIZE/t_data->total_thread,
-                t_data->transfer_size, t_data->thread_id);
+                t_data->transfer_size, t_data->thread_id, t_data->batch_size);
         if (ret) {
             fprintf(stderr, "rpmem_persist: %s\n", rpmem_errormsg());
         }
@@ -228,6 +228,7 @@ main(int argc, char *argv[])
         td[i].readbuf = NULL;
         td[i].total_thread = num_threads;
         td[i].isWrite = true;
+	td[i].batch_size = batch_size;
     }
 
     /* write performance test */

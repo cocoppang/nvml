@@ -62,7 +62,7 @@ int rpmem_fip_process_stop(struct rpmem_fip *fip);
 
 //thkim modified
 int rpmem_fip_persist_test(struct rpmem_fip *fip, size_t offset, size_t len,
-		size_t transfer_len, unsigned lane);
+		size_t transfer_len, unsigned lane, unsigned batch_size);
 int rpmem_fip_persist(struct rpmem_fip *fip, size_t offset, size_t len,
 		unsigned lane);
 

@@ -82,7 +82,7 @@ int rpmem_close(RPMEMpool *rpp);
 
 //thkim
 int rpmem_persist_test(RPMEMpool *rpp, size_t offset, size_t length, size_t transfer_len,
-		unsigned lane);
+		unsigned lane, unsigned batch_size);
 int rpmem_persist(RPMEMpool *rpp, size_t offset, size_t length,
 		unsigned lane);
 //thkim
