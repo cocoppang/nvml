@@ -25,3 +25,6 @@ nbproject/
 *.hpptmp
 *.aps
 tags
+
+*environment
+
