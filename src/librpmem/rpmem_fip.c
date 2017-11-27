@@ -308,7 +308,8 @@ rpmem_fip_lane_wait_batch(struct rpmem_fip *fip, struct rpmem_fip_lane *lanep,
 	    if(*queue_count == 0)
 		break;
 
-	    sret = fi_cq_sread(lanep->cq, &cq_entry, 1, NULL, -1);
+	    //sret = fi_cq_sread(lanep->cq, &cq_entry, 1, NULL, -1);
+	    sret = fi_cq_read(lanep->cq, &cq_entry, 1);
 	    if (unlikely(fip->closing))
 	    {
 		RPMEM_LOG(ERR,"fip->closing");
@@ -328,7 +329,7 @@ rpmem_fip_lane_wait_batch(struct rpmem_fip *fip, struct rpmem_fip_lane *lanep,
 
 	    //	lanep->event &= ~cq_entry.flags;
 	    cur += (unsigned)sret;
-	    (*queue_count)--;
+	    *queue_count -= sret;
 	}
 
 	return 0;
