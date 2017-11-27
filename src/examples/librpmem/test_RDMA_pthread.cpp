@@ -48,8 +48,8 @@
 #include <sys/time.h>
 #include <time.h>
 
-#define POOL_SIZE	(1024 * 1024)
-//#define POOL_SIZE	(4096)
+#define POOL_SIZE	(1024 * 1024 * 1024)
+//#define POOL_SIZE	(32 * 1024 * 1024)
 //#define NLANES		4
 
 struct thread_data{
@@ -260,7 +260,7 @@ main(int argc, char *argv[])
         td[i].readbuf = readbuf_idx;
         td[i].total_thread = num_threads;
         td[i].isWrite = false;
-	td[i].batch_size = batch_size;
+	    td[i].batch_size = batch_size;
     }
         
     //R1 = timestamp();
